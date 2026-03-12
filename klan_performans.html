@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klan Savaş Performansı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-deep:      #030508;
+  --bg-card:      #0a0e1a;
+  --bg-surface:   #0f1628;
+  --bg-hover:     #151d35;
+  --border:       #1e2d50;
+  --border-glow:  #2a4a8a;
+  --accent:       #c9a84c;
+  --accent-dim:   #8a6a28;
+  --accent-glow:  rgba(201,168,76,0.15);
+  --text-primary: #e8dcc8;
+  --text-secondary:#8a9bb8;
+  --text-dim:     #4a5a78;
+  --gold:         #ffd700;
+  --silver:       #c0c8d8;
+  --bronze:       #cd7f32;
+  --green:        #4ade80;
+  --green-dim:    rgba(74,222,128,0.12);
+  --red:          #f87171;
+  --red-dim:      rgba(248,113,113,0.12);
+  --blue-bonus:   #60a5fa;
+  --blue-dim:     rgba(96,165,250,0.12);
+  --win:          #4ade80;
+  --lose:         #f87171;
+  --draw:         #facc15;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(42,74,138,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 40% 60% at 0% 80%, rgba(10,20,50,0.5) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.site-header {
+  position: relative; z-index: 10;
+  text-align: center;
+  padding: 3rem 1rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.site-header::after {
+  content: '';
+  display: block;
+  width: 120px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  margin: 1.2rem auto 0;
+}
+.clan-name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(1.6rem, 5vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #ffd700 0%, #c9a84c 40%, #8a6a28 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.update-time {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: 0.6rem;
+  letter-spacing: 0.1em;
+}
+
+.season-tabs {
+  position: relative; z-index: 10;
+  display: flex;
+  gap: 0.4rem;
+  padding: 1.5rem 1.5rem 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border);
+}
+.season-tabs::-webkit-scrollbar { display: none; }
+.season-tab {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.6rem 1.4rem;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.season-tab:hover { color: var(--accent); border-color: var(--border-glow); }
+.season-tab.active {
+  background: var(--bg-card);
+  color: var(--accent);
+  border-color: var(--border-glow);
+  border-bottom: 1px solid var(--bg-card);
+  margin-bottom: -1px;
+}
+
+.season-panel { display: none; position: relative; z-index: 10; padding: 2rem 1.5rem; }
+.season-panel.active { display: block; }
+
+.section-title {
+  font-family: 'Cinzel', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.section-title::before {
+  content: '';
+  display: inline-block;
+  width: 3px; height: 1rem;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  margin-bottom: 2rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table thead tr {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-glow);
+}
+.data-table th {
+  padding: 0.8rem 1rem;
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  transition: color 0.2s;
+}
+.data-table th:hover { color: var(--accent); }
+.sort-icon { margin-left: 4px; opacity: 0.4; font-size: 0.7rem; }
+.data-table td {
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(30,45,80,0.5);
+  font-weight: 500;
+  transition: background 0.15s;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--bg-hover); }
+
+.rank-gold   td { background: rgba(255,215,0,0.04); }
+.rank-silver td { background: rgba(192,200,216,0.03); }
+.rank-bronze td { background: rgba(205,127,50,0.03); }
+.rank-cell { font-weight: 700; font-size: 1rem; }
+.name-cell { text-align: left !important; font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+
+.score-cell { font-family: 'Cinzel', serif; font-weight: 700; font-size: 1rem; }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.bonus-cell { color: var(--blue-bonus); font-weight: 600; }
+.penalty-cell { color: var(--red); font-weight: 600; }
+
+.wars-block { margin-top: 0.5rem; }
+.war-accordion {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  background: var(--bg-card);
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.war-accordion:hover { border-color: var(--border-glow); }
+.war-accordion.open { border-color: var(--border-glow); }
+
+.war-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  cursor: pointer;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.war-title-left { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.war-num {
+  font-family: 'Cinzel', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+}
+.war-matchup { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); }
+.vs { color: var(--text-dim); font-size: 0.8rem; margin: 0 0.3rem; }
+.war-title-right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+.war-stars { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+.war-result {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.war-result.win  { color: var(--win);  background: rgba(74,222,128,0.1);  border: 1px solid rgba(74,222,128,0.3); }
+.war-result.lose { color: var(--lose); background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.3); }
+.war-result.draw { color: var(--draw); background: rgba(250,204,21,0.1);  border: 1px solid rgba(250,204,21,0.3); }
+.war-date { font-size: 0.75rem; color: var(--text-dim); white-space: nowrap; }
+.chevron { color: var(--text-dim); font-size: 0.7rem; transition: transform 0.25s; flex-shrink: 0; }
+.war-accordion.open .chevron { transform: rotate(180deg); }
+
+.war-body { display: none; padding: 0 1rem 1rem; }
+.war-accordion.open .war-body { display: block; }
+.war-body .table-wrap { margin-bottom: 0; }
+
+@media (max-width: 640px) {
+  .season-tabs { padding: 1rem 1rem 0; }
+  .season-panel { padding: 1.2rem 0.8rem; }
+  .data-table th, .data-table td { padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+  .war-header { padding: 0.8rem; }
+  .war-matchup { font-size: 0.85rem; }
+  .clan-name { font-size: 1.6rem; }
+}
+
+.no-data { text-align: center; color: var(--text-dim); padding: 3rem; font-size: 0.9rem; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="clan-name">&#9876; KLAN SAVAŞ PERFORMANSI</div>
+  <div class="update-time">Son güncelleme: 11.03.2026 23:48</div>
+</header>
+
+<div class="season-tabs">
+<button class="season-tab active" onclick="switchSeason(0)" id="tab-0">Sezon 1</button>
+
+</div>
+
+<div class="season-panel active" id="season-0"><div class="season-summary-block"><h2 class="section-title">Sezon Özeti</h2><div class="table-wrap"><table class="data-table" id="sum-0" data-sort-col="-1" data-sort-dir="desc">
+<thead><tr><th onclick="sortTable('sum-0',0)">Sıra<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',1)">Oyuncu<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',2)">Toplam Puan<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',3)">Savaş<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',4)">⭐ Ort. Yıldız<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',5)">💀 Kaybedilen<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',6)">Bonus<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',7)">Ceza<span class="sort-icon">⇅</span></th><th onclick="sortTable('sum-0',8)">Ort. Puan<span class="sort-icon">⇅</span></th></tr></thead>
+<tbody>
+<tr class="rank-gold"><td class="rank-cell">🥇 1</td><td class="name-cell">KEOMA IZMIR</td><td class="score-cell pos">+6.90</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">+1.15</td><td class="penalty-cell">—</td><td class="pos">+6.90</td></tr>
+<tr class="rank-silver"><td class="rank-cell">🥈 2</td><td class="name-cell">Majestic</td><td class="score-cell pos">+6.00</td><td>1</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+6.00</td></tr>
+<tr class="rank-bronze"><td class="rank-cell">🥉 3</td><td class="name-cell">Exmilitary</td><td class="score-cell pos">+6.00</td><td>1</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+6.00</td></tr>
+<tr class=""><td class="rank-cell"> 4</td><td class="name-cell">zıkkımheriff</td><td class="score-cell pos">+5.50</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+5.50</td></tr>
+<tr class=""><td class="rank-cell"> 5</td><td class="name-cell">sono</td><td class="score-cell pos">+5.40</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">+0.90</td><td class="penalty-cell">—</td><td class="pos">+5.40</td></tr>
+<tr class=""><td class="rank-cell"> 6</td><td class="name-cell">The Onder</td><td class="score-cell pos">+5.20</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">+0.80</td><td class="penalty-cell">—</td><td class="pos">+5.20</td></tr>
+<tr class=""><td class="rank-cell"> 7</td><td class="name-cell">BurningBlood</td><td class="score-cell pos">+5.00</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">+1.00</td><td class="penalty-cell">—</td><td class="pos">+5.00</td></tr>
+<tr class=""><td class="rank-cell"> 8</td><td class="name-cell">KUDÜS FATİHİ</td><td class="score-cell pos">+5.00</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+5.00</td></tr>
+<tr class=""><td class="rank-cell"> 9</td><td class="name-cell">gandalf</td><td class="score-cell pos">+5.00</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+5.00</td></tr>
+<tr class=""><td class="rank-cell"> 10</td><td class="name-cell">BasarACR</td><td class="score-cell pos">+4.80</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.80</td></tr>
+<tr class=""><td class="rank-cell"> 11</td><td class="name-cell">Aryan</td><td class="score-cell pos">+4.70</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.70</td></tr>
+<tr class=""><td class="rank-cell"> 12</td><td class="name-cell">legolas</td><td class="score-cell pos">+4.70</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.70</td></tr>
+<tr class=""><td class="rank-cell"> 13</td><td class="name-cell">Reed</td><td class="score-cell pos">+4.60</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.60</td></tr>
+<tr class=""><td class="rank-cell"> 14</td><td class="name-cell">MrZenor</td><td class="score-cell pos">+4.30</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.30</td></tr>
+<tr class=""><td class="rank-cell"> 15</td><td class="name-cell">VIPER</td><td class="score-cell pos">+4.00</td><td>1</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+4.00</td></tr>
+<tr class=""><td class="rank-cell"> 16</td><td class="name-cell">Elfishus</td><td class="score-cell pos">+3.75</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.75</td></tr>
+<tr class=""><td class="rank-cell"> 17</td><td class="name-cell">***MAREŞAL***</td><td class="score-cell pos">+3.75</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.75</td></tr>
+<tr class=""><td class="rank-cell"> 18</td><td class="name-cell">imparator</td><td class="score-cell pos">+3.60</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.60</td></tr>
+<tr class=""><td class="rank-cell"> 19</td><td class="name-cell">KONDU</td><td class="score-cell pos">+3.40</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.40</td></tr>
+<tr class=""><td class="rank-cell"> 20</td><td class="name-cell">blackknigt</td><td class="score-cell pos">+3.00</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.00</td></tr>
+<tr class=""><td class="rank-cell"> 21</td><td class="name-cell">Tracham</td><td class="score-cell pos">+2.80</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.80</td></tr>
+<tr class=""><td class="rank-cell"> 22</td><td class="name-cell">Alakazum</td><td class="score-cell pos">+2.60</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.60</td></tr>
+<tr class=""><td class="rank-cell"> 23</td><td class="name-cell">KRAL43</td><td class="score-cell pos">+2.50</td><td>1</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.50</td></tr>
+<tr class=""><td class="rank-cell"> 24</td><td class="name-cell">*Phoboss*</td><td class="score-cell pos">+2.50</td><td>1</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.50</td></tr>
+<tr class=""><td class="rank-cell"> 25</td><td class="name-cell">Samedov⚔️</td><td class="score-cell pos">+2.25</td><td>1</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.25</td></tr>
+<tr class=""><td class="rank-cell"> 26</td><td class="name-cell">GRAYWOLF</td><td class="score-cell pos">+1.60</td><td>1</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.60</td></tr>
+<tr class=""><td class="rank-cell"> 27</td><td class="name-cell">Büyükelçi_74</td><td class="score-cell neg">-1.60</td><td>1</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-4.00</td><td class="neg">-1.60</td></tr>
+<tr class=""><td class="rank-cell"> 28</td><td class="name-cell">N.K.G.</td><td class="score-cell neg">-2.20</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-4.00</td><td class="neg">-2.20</td></tr>
+<tr class=""><td class="rank-cell"> 29</td><td class="name-cell">NamelessWarior</td><td class="score-cell neg">-8.00</td><td>1</td><td>—</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-8.00</td><td class="neg">-8.00</td></tr>
+<tr class=""><td class="rank-cell"> 30</td><td class="name-cell">Big Surprise</td><td class="score-cell neg">-8.00</td><td>1</td><td>—</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-8.00</td><td class="neg">-8.00</td></tr>
+</tbody></table>
+</div></div><div class="wars-block"><h2 class="section-title">Savaşlar</h2><div class="war-accordion" id="acc-0-0"><div class="war-header" onclick="toggleWar('acc-0-0')"><div class="war-title-left"><span class="war-num">1. Savaş</span><span class="war-matchup">367.gün <span class="vs">vs</span> Rakı P©wer</span></div><div class="war-title-right"><span class="war-stars">⭐ 75 — 90 ⭐</span><span class="war-result lose">KAYBEDİLDİ</span><span class="war-date">2026-03-11</span><span class="chevron">▼</span></div></div><div class="war-body"><table class="data-table" id="war-0-0" data-sort-col="-1" data-sort-dir="desc">
+<thead><tr><th onclick="sortTable('war-0-0',0)">Sıra<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',1)">Oyuncu<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',2)">Toplam Puan<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',3)">Saldırı<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',4)">⭐ Ort. Yıldız<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',5)">💀 Kaybedilen<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',6)">Bonus<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',7)">Ceza<span class="sort-icon">⇅</span></th><th onclick="sortTable('war-0-0',8)">Ort. Puan<span class="sort-icon">⇅</span></th></tr></thead>
+<tbody>
+<tr class="rank-gold"><td class="rank-cell">🥇 1</td><td class="name-cell">KEOMA IZMIR</td><td class="score-cell pos">+6.90</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">+1.15</td><td class="penalty-cell">—</td><td class="pos">+3.45</td></tr>
+<tr class="rank-silver"><td class="rank-cell">🥈 2</td><td class="name-cell">Majestic</td><td class="score-cell pos">+6.00</td><td>2</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.00</td></tr>
+<tr class="rank-bronze"><td class="rank-cell">🥉 3</td><td class="name-cell">Exmilitary</td><td class="score-cell pos">+6.00</td><td>2</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+3.00</td></tr>
+<tr class=""><td class="rank-cell"> 4</td><td class="name-cell">zıkkımheriff</td><td class="score-cell pos">+5.50</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.75</td></tr>
+<tr class=""><td class="rank-cell"> 5</td><td class="name-cell">sono</td><td class="score-cell pos">+5.40</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">+0.90</td><td class="penalty-cell">—</td><td class="pos">+2.70</td></tr>
+<tr class=""><td class="rank-cell"> 6</td><td class="name-cell">The Onder</td><td class="score-cell pos">+5.20</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">+0.80</td><td class="penalty-cell">—</td><td class="pos">+2.60</td></tr>
+<tr class=""><td class="rank-cell"> 7</td><td class="name-cell">BurningBlood</td><td class="score-cell pos">+5.00</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">+1.00</td><td class="penalty-cell">—</td><td class="pos">+2.50</td></tr>
+<tr class=""><td class="rank-cell"> 8</td><td class="name-cell">KUDÜS FATİHİ</td><td class="score-cell pos">+5.00</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.50</td></tr>
+<tr class=""><td class="rank-cell"> 9</td><td class="name-cell">gandalf</td><td class="score-cell pos">+5.00</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.50</td></tr>
+<tr class=""><td class="rank-cell"> 10</td><td class="name-cell">BasarACR</td><td class="score-cell pos">+4.80</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.40</td></tr>
+<tr class=""><td class="rank-cell"> 11</td><td class="name-cell">Aryan</td><td class="score-cell pos">+4.70</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.35</td></tr>
+<tr class=""><td class="rank-cell"> 12</td><td class="name-cell">legolas</td><td class="score-cell pos">+4.70</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.35</td></tr>
+<tr class=""><td class="rank-cell"> 13</td><td class="name-cell">Reed</td><td class="score-cell pos">+4.60</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.30</td></tr>
+<tr class=""><td class="rank-cell"> 14</td><td class="name-cell">MrZenor</td><td class="score-cell pos">+4.30</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.15</td></tr>
+<tr class=""><td class="rank-cell"> 15</td><td class="name-cell">VIPER</td><td class="score-cell pos">+4.00</td><td>2</td><td>2.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+2.00</td></tr>
+<tr class=""><td class="rank-cell"> 16</td><td class="name-cell">Elfishus</td><td class="score-cell pos">+3.75</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.88</td></tr>
+<tr class=""><td class="rank-cell"> 17</td><td class="name-cell">***MAREŞAL***</td><td class="score-cell pos">+3.75</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.88</td></tr>
+<tr class=""><td class="rank-cell"> 18</td><td class="name-cell">imparator</td><td class="score-cell pos">+3.60</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.80</td></tr>
+<tr class=""><td class="rank-cell"> 19</td><td class="name-cell">KONDU</td><td class="score-cell pos">+3.40</td><td>2</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.70</td></tr>
+<tr class=""><td class="rank-cell"> 20</td><td class="name-cell">blackknigt</td><td class="score-cell pos">+3.00</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.50</td></tr>
+<tr class=""><td class="rank-cell"> 21</td><td class="name-cell">Tracham</td><td class="score-cell pos">+2.80</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.40</td></tr>
+<tr class=""><td class="rank-cell"> 22</td><td class="name-cell">Alakazum</td><td class="score-cell pos">+2.60</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.30</td></tr>
+<tr class=""><td class="rank-cell"> 23</td><td class="name-cell">KRAL43</td><td class="score-cell pos">+2.50</td><td>2</td><td>1.5</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.25</td></tr>
+<tr class=""><td class="rank-cell"> 24</td><td class="name-cell">*Phoboss*</td><td class="score-cell pos">+2.50</td><td>2</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.25</td></tr>
+<tr class=""><td class="rank-cell"> 25</td><td class="name-cell">Samedov⚔️</td><td class="score-cell pos">+2.25</td><td>2</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+1.12</td></tr>
+<tr class=""><td class="rank-cell"> 26</td><td class="name-cell">GRAYWOLF</td><td class="score-cell pos">+1.60</td><td>2</td><td>1.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">—</td><td class="pos">+0.80</td></tr>
+<tr class=""><td class="rank-cell"> 27</td><td class="name-cell">Büyükelçi_74</td><td class="score-cell neg">-1.60</td><td>1</td><td>3.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-4</td><td class="neg">-1.60</td></tr>
+<tr class=""><td class="rank-cell"> 28</td><td class="name-cell">N.K.G.</td><td class="score-cell neg">-2.20</td><td>1</td><td>2.0</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-4</td><td class="neg">-2.20</td></tr>
+<tr class=""><td class="rank-cell"> 29</td><td class="name-cell">NamelessWarior</td><td class="score-cell neg">-8.00</td><td>0</td><td>—</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-8</td><td class="">0.00</td></tr>
+<tr class=""><td class="rank-cell"> 30</td><td class="name-cell">Big Surprise</td><td class="score-cell neg">-8.00</td><td>0</td><td>—</td><td>3</td><td class="bonus-cell">—</td><td class="penalty-cell">-8</td><td class="">0.00</td></tr>
+</tbody></table>
+</div></div></div></div>
+
+<script>
+function switchSeason(idx) {
+  document.querySelectorAll('.season-tab').forEach(function(t,i){ t.classList.toggle('active', i===idx); });
+  document.querySelectorAll('.season-panel').forEach(function(p,i){ p.classList.toggle('active', i===idx); });
+}
+
+function toggleWar(id) {
+  var el = document.getElementById(id);
+  el.classList.toggle('open');
+}
+
+function sortTable(tableId, colIdx) {
+  var table = document.getElementById(tableId);
+  var tbody = table.querySelector('tbody');
+  var rows  = Array.from(tbody.querySelectorAll('tr'));
+  var prev  = parseInt(table.dataset.sortCol);
+  var dir   = (prev === colIdx && table.dataset.sortDir === 'asc') ? 'desc' : 'asc';
+  table.dataset.sortCol = colIdx;
+  table.dataset.sortDir = dir;
+
+  rows.sort(function(a, b) {
+    var av = a.cells[colIdx].textContent.trim().replace(/[+\u2b50\ud83e\udd47\ud83e\udd48\ud83e\udd49\ud83d\udca5\u2014]/g, '').trim();
+    var bv = b.cells[colIdx].textContent.trim().replace(/[+\u2b50\ud83e\udd47\ud83e\udd48\ud83e\udd49\ud83d\udca5\u2014]/g, '').trim();
+    var an = parseFloat(av);
+    var bn = parseFloat(bv);
+    if (!isNaN(an) && !isNaN(bn)) return dir === 'asc' ? an - bn : bn - an;
+    return dir === 'asc' ? av.localeCompare(bv,'tr') : bv.localeCompare(av,'tr');
+  });
+
+  rows.forEach(function(r, i) {
+    r.classList.remove('rank-gold','rank-silver','rank-bronze');
+    if (colIdx === 2) {
+      if (i===0) r.classList.add('rank-gold');
+      else if (i===1) r.classList.add('rank-silver');
+      else if (i===2) r.classList.add('rank-bronze');
+    }
+    tbody.appendChild(r);
+  });
+
+  table.querySelectorAll('th .sort-icon').forEach(function(ic, i) {
+    ic.textContent = i === colIdx ? (dir === 'asc' ? '\u2191' : '\u2193') : '\u21c5';
+    ic.style.opacity = i === colIdx ? '1' : '0.4';
+  });
+}
+</script>
+</body>
+</html>
